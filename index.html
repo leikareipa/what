@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>What?</title>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<meta name="viewport" content="width=device-width">
+		<style>
+		body
+		{
+			background-color: black;
+			color: lightgray;
+		}
+		</style>
+	</head>
+	<body>
+		<input type="file" id="video-file-selector">
+		
+		<script src="filesaver/FileSaver.js"></script>
+		<script>
+			document.getElementById("video-file-selector").onchange = async function()
+			{
+				const rawAudio = await get_raw_audio(this.files[0]);
+				const peaks = find_audio_peaks(rawAudio.channels[0]);
+
+				peaks.forEach(peak=>
+				{
+					console.log(peak.idx / rawAudio.sampleRate);
+				});
+			};
+
+            // Extracts the raw audio samples from the given video file.
+			//
+			// Returns a Promise that resolves to an object of the following kind:
+			//
+			//     {
+			//	       duration,
+		    //         sampleRate,
+			//         channels
+			//         [
+			//             Float32Array,
+			//             Float32Array,
+			//             ...
+			//             Float32Array,
+			//         ],
+			//     }
+			//
+			// where 'duration' gives the audio's duration in seconds; 'sampleRate' the audio's sample
+			// rate; and 'channels' an array of Float32Array objects, each giving the raw samples of a
+			// particular channel of audio. (The audio's channel count is equal to channels.length.)
+			//
+			async function get_raw_audio(videoFile)
+			{
+				return new Promise((resolve)=>
+				{
+					const fileReader = new FileReader();
+
+					fileReader.readAsArrayBuffer(videoFile);
+					fileReader.onloadend = async()=>
+					{
+						const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+						const decodedAudioData = await audioContext.decodeAudioData(fileReader.result);
+
+						const returnData =
+						{
+							duration: decodedAudioData.duration,
+							sampleRate: decodedAudioData.sampleRate,
+							channels: new Array(decodedAudioData.numberOfChannels).fill().map((elem, idx)=>decodedAudioData.getChannelData(idx)),
+						}
+
+						resolve(returnData);
+					};
+				});
+			}
+
+			// Finds samples in the audio whose magnitude exceeds a threshold. Returns a
+			// list of these samples in an array of the following form:
+			//
+			//     [
+			//	       {idx, sample},
+			//         {idx, sample},
+			//         ...
+			//         {idx, sample},
+			//     ]
+			//
+			// where 'idx' is the index of this sample in the audio, and 'sample' is the
+			// value of that sample.
+			//
+			// The audio is expected to be provided as an array of samples, e.g. Float32Array.
+			//
+			function find_audio_peaks(rawAudio)
+			{
+				const [min, max, median] = (()=>
+				{
+					const median = rawAudio.slice().sort()[rawAudio.length / 2];
+					let min = Number.MAX_SAFE_INTEGER;
+					let max = Number.MIN_SAFE_INTEGER;
+
+					for (let i = 0; i < rawAudio.length; i++)
+					{
+						const sample = Math.abs(rawAudio[i]);
+
+						if (sample > max) max = sample;
+						if (sample < min) min = sample;
+					}
+
+					return [min, max, median];
+				})();
+
+				return rawAudio.reduce((peaks, sample, idx)=>
+				{
+					if (Math.abs(sample) > ((max - min) * 0.2))
+					{
+						peaks.push({idx, sample});
+					}
+
+					return peaks;
+				}, []);
+			}
+		</script>
+	</body>
+</html>
