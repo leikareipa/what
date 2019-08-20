@@ -47,7 +47,7 @@
 				left: 0;
 				width: 100%;
 				height: 10px;
-				background-color: gray;
+				background-color: rgb(141, 141, 141);
 				border-radius: 5px;
 				z-index: 1;
 			}
@@ -64,27 +64,26 @@
 				top: 0;
 				left: 0;
 				-webkit-appearance: none;
-				width: 670px;
+				width: 666px;
 				height: 10px;
 				border-radius: 5px;   
 				background: transparent;
 				outline: none;
 				padding: 0;
 				margin: 0;
-				margin-left: -15px;
+				margin-left: -13px;
 				z-index: 2;
+				cursor: pointer;
 			}
 
 			.slider::-webkit-slider-thumb
 			{
 				-webkit-appearance: none;
 				appearance: none;
-				width: 35px;
-				height: 35px;
+				width: 26px;
+				height: 26px;
 				border-radius: 50%; 
-				background: rgba(150, 150, 150, 0.8);
-				cursor: pointer;
-
+				background: rgb(255, 255, 255);
 			}
 		</style>
 	</head>
@@ -93,10 +92,12 @@
 		<div id="content">
 			<input type="file" id="video-file-selector"><br>
 
+			<button onclick="toggle_video_playback();">Play</button>
+
 			<div id="video-container">
 				<video id="video-player"></video>
 				<div id="video-controls">
-					<input type="range" id="video-seek-bar" value="0" class="slider">
+					<input type="range" id="video-seek-bar" value="0" step="0.00001" class="slider">
 					<div id="audio-peaks">
 						<canvas id="audio-peaks-canvas" width="640" height="10"></canvas>
 					</div>
@@ -108,7 +109,8 @@
 		<script>
 			document.getElementById("video-seek-bar").oninput = function()
 			{
-				console.log(this.value);
+				const player = document.getElementById("video-player");
+				player.currentTime = (player.duration * (this.value / 100))
 			}
 
 			document.getElementById("video-file-selector").onchange = async function()
@@ -129,6 +131,25 @@
 				});
 				*/
 			};
+
+			function toggle_video_playback()
+			{
+				const player = document.getElementById("video-player");
+				player.paused? player.play() : player.pause();
+			}
+
+			function update_seek_bar_position()
+			{
+				const player = document.getElementById("video-player");
+
+				if (!player.paused)
+				{
+					document.getElementById("video-seek-bar").value = ((player.currentTime / player.duration) * 100);
+				}
+				
+				requestAnimationFrame(update_seek_bar_position);
+			}
+			requestAnimationFrame(update_seek_bar_position);
 
             // Extracts the raw audio samples from the given video file.
 			//
@@ -224,7 +245,7 @@
 				const canvas = document.getElementById("audio-peaks-canvas");
 				const context = canvas.getContext("2d");
 
-				context.fillStyle = "#e9e9e9";
+				context.fillStyle = "goldenrod";
 
 				for (let i = 0; i < peaks.length; i++)
 				{
