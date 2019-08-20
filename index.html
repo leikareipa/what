@@ -22,25 +22,69 @@
 			{
 				width: 640px;
 				height: 480px;
-				max-width: 640px;
-				max-height: 480px;
-				border: 1px dashed yellow;
-
-				display: flex;
-				flex-direction: column;
+				background-color: black;
+				box-shadow: 0 0 5px 5px rgba(0, 0, 0, 0.3);
 			}
 
 			#video-player
 			{
 				width: 100%;
-				flex-basis: 90%;
+				height: 470px;
 				outline: none;
+			}
+
+			#video-controls
+			{
+				position: relative;
+				width: 100%;
+				height: 10px;
 			}
 
 			#audio-peaks
 			{
-				flex-grow: 1;
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 10px;
 				background-color: gray;
+				border-radius: 5px;
+				z-index: 1;
+			}
+
+			#audio-peaks-canvas
+			{
+				position: absolute;
+				border-radius: 5px;
+			}
+
+			.slider
+			{
+				position: absolute;
+				top: 0;
+				left: 0;
+				-webkit-appearance: none;
+				width: 670px;
+				height: 10px;
+				border-radius: 5px;   
+				background: transparent;
+				outline: none;
+				padding: 0;
+				margin: 0;
+				margin-left: -15px;
+				z-index: 2;
+			}
+
+			.slider::-webkit-slider-thumb
+			{
+				-webkit-appearance: none;
+				appearance: none;
+				width: 35px;
+				height: 35px;
+				border-radius: 50%; 
+				background: rgba(150, 150, 150, 0.8);
+				cursor: pointer;
+
 			}
 		</style>
 	</head>
@@ -50,19 +94,32 @@
 			<input type="file" id="video-file-selector"><br>
 
 			<div id="video-container">
-				<video id="video-player" controls></video>
-				<div id="audio-peaks"></div>
+				<video id="video-player"></video>
+				<div id="video-controls">
+					<input type="range" id="video-seek-bar" value="0" class="slider">
+					<div id="audio-peaks">
+						<canvas id="audio-peaks-canvas" width="640" height="10"></canvas>
+					</div>
+				</div>
 			</div>
 		</div>
 		
 		<script src="filesaver/FileSaver.js"></script>
 		<script>
+			document.getElementById("video-seek-bar").oninput = function()
+			{
+				console.log(this.value);
+			}
+
 			document.getElementById("video-file-selector").onchange = async function()
 			{
 				const rawAudio = await get_raw_audio(this.files[0]);
+				const audioPeaks = find_audio_peaks(rawAudio.channels[0]);
 				
 				document.getElementById("video-player").setAttribute("src", URL.createObjectURL(this.files[0]));
 				document.getElementById("video-player").setAttribute("type", this.files[0].type);
+
+				render_peaks_into_canvas(audioPeaks, rawAudio.channels[0].length);
 
 				/*
 				const peaks = find_audio_peaks(rawAudio.channels[0]);
@@ -132,17 +189,17 @@
 			//
 			// The audio is expected to be provided as an array of samples, e.g. Float32Array.
 			//
-			function find_audio_peaks(rawAudio)
+			function find_audio_peaks(audioSamples)
 			{
 				const [min, max, median] = (()=>
 				{
-					const median = rawAudio.slice().sort()[rawAudio.length / 2];
+					const median = audioSamples.slice().sort()[audioSamples.length / 2];
 					let min = Number.MAX_SAFE_INTEGER;
 					let max = Number.MIN_SAFE_INTEGER;
 
-					for (let i = 0; i < rawAudio.length; i++)
+					for (let i = 0; i < audioSamples.length; i++)
 					{
-						const sample = Math.abs(rawAudio[i]);
+						const sample = Math.abs(audioSamples[i]);
 
 						if (sample > max) max = sample;
 						if (sample < min) min = sample;
@@ -151,15 +208,29 @@
 					return [min, max, median];
 				})();
 
-				return rawAudio.reduce((peaks, sample, idx)=>
+				return audioSamples.reduce((peaks, sample, idx)=>
 				{
-					if (Math.abs(sample) > ((max - min) * 0.2))
+					if (Math.abs(sample) > ((max - min) * 0.4))
 					{
 						peaks.push({idx, sample});
 					}
 
 					return peaks;
 				}, []);
+			}
+
+			function render_peaks_into_canvas(peaks, audioSampleSize)
+			{
+				const canvas = document.getElementById("audio-peaks-canvas");
+				const context = canvas.getContext("2d");
+
+				context.fillStyle = "#e9e9e9";
+
+				for (let i = 0; i < peaks.length; i++)
+				{
+					const x = (peaks[i].idx / audioSampleSize) * canvas.width;
+					context.fillRect(x, 0, x+1, canvas.height);
+				}
 			}
 		</script>
 	</body>
