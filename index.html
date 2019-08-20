@@ -5,27 +5,72 @@
 		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
 		<meta name="viewport" content="width=device-width">
 		<style>
-		body
-		{
-			background-color: black;
-			color: lightgray;
-		}
+			body
+			{
+				background-color: black;
+				color: lightgray;
+				text-align: center;
+			}
+
+			#content
+			{
+				display: inline-block;
+				text-align: left;
+			}
+
+			#video-container
+			{
+				width: 640px;
+				height: 480px;
+				max-width: 640px;
+				max-height: 480px;
+				border: 1px dashed yellow;
+
+				display: flex;
+				flex-direction: column;
+			}
+
+			#video-player
+			{
+				width: 100%;
+				flex-basis: 90%;
+				outline: none;
+			}
+
+			#audio-peaks
+			{
+				flex-grow: 1;
+				background-color: gray;
+			}
 		</style>
 	</head>
 	<body>
-		<input type="file" id="video-file-selector">
+
+		<div id="content">
+			<input type="file" id="video-file-selector"><br>
+
+			<div id="video-container">
+				<video id="video-player" controls></video>
+				<div id="audio-peaks"></div>
+			</div>
+		</div>
 		
 		<script src="filesaver/FileSaver.js"></script>
 		<script>
 			document.getElementById("video-file-selector").onchange = async function()
 			{
 				const rawAudio = await get_raw_audio(this.files[0]);
-				const peaks = find_audio_peaks(rawAudio.channels[0]);
+				
+				document.getElementById("video-player").setAttribute("src", URL.createObjectURL(this.files[0]));
+				document.getElementById("video-player").setAttribute("type", this.files[0].type);
 
+				/*
+				const peaks = find_audio_peaks(rawAudio.channels[0]);
 				peaks.forEach(peak=>
 				{
 					console.log(peak.idx / rawAudio.sampleRate);
 				});
+				*/
 			};
 
             // Extracts the raw audio samples from the given video file.
