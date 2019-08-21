@@ -7,14 +7,11 @@
 		<link rel="stylesheet" type="text/css" href="index.css">
 	</head>
 	<body>
-
 		<div id="content">
 			<input type="file" id="video-file-selector"><br>
 
-			<button onclick="toggle_video_playback();">Play</button>
-
 			<div id="video-container">
-				<video id="video-player"></video>
+				<video id="video-player" autoplay></video>
 				<div id="video-controls">
 					<input type="range" id="video-seek-bar" value="0" step="0.00001" class="slider">
 					<div id="audio-peaks">
@@ -50,13 +47,7 @@
 				});
 				*/
 			};
-
-			function toggle_video_playback()
-			{
-				const player = document.getElementById("video-player");
-				player.paused? player.play() : player.pause();
-			}
-
+			
 			function update_seek_bar_position()
 			{
 				const player = document.getElementById("video-player");
