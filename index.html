@@ -16,6 +16,7 @@
 			<div id="video-controls">
 				<input type="range" id="video-seek-bar" value="0" step="0.00001" class="slider">
 				<div id="audio-peaks">
+					<svg id="audio-peaks-image" viewBox="0 0 100 10" preserveAspectRatio="none"></svg>
 				</div>
 			</div>
 		</div>
@@ -31,20 +32,12 @@
 			document.getElementById("video-file-selector").onchange = async function()
 			{
 				const rawAudio = await get_raw_audio(this.files[0]);
-				const audioPeaks = find_audio_peaks(rawAudio.channels[0]);
+				const audioPeaks = get_audio_peaks(rawAudio.channels[0]);
+
+				render_peaks_into_svg(audioPeaks, rawAudio.channels[0].length);
 				
 				document.getElementById("video-player").setAttribute("src", URL.createObjectURL(this.files[0]));
 				document.getElementById("video-player").setAttribute("type", this.files[0].type);
-
-			//	render_peaks_into_canvas(audioPeaks, rawAudio.channels[0].length);
-
-				/*
-				const peaks = find_audio_peaks(rawAudio.channels[0]);
-				peaks.forEach(peak=>
-				{
-					console.log(peak.idx / rawAudio.sampleRate);
-				});
-				*/
 			};
 
 			function update_seek_bar_position()
@@ -105,21 +98,13 @@
 			}
 
 			// Finds samples in the audio whose magnitude exceeds a threshold. Returns a
-			// list of these samples in an array of the following form:
-			//
-			//     [
-			//	       {idx, sample},
-			//         {idx, sample},
-			//         ...
-			//         {idx, sample},
-			//     ]
-			//
-			// where 'idx' is the index of this sample in the audio, and 'sample' is the
-			// value of that sample.
+			// list of these samples in an Array(100), where each element gives the sample's
+			// magnitude (or 0 if the threshold is not exceeded). The array has 100 elements,
+			// corresponding to the length of the audio in percentages.
 			//
 			// The audio is expected to be provided as an array of samples, e.g. Float32Array.
 			//
-			function find_audio_peaks(audioSamples)
+			function get_audio_peaks(audioSamples)
 			{
 				const [min, max, median] = (()=>
 				{
@@ -140,27 +125,41 @@
 
 				return audioSamples.reduce((peaks, sample, idx)=>
 				{
-					if (Math.abs(sample) > ((max - min) * 0.4))
+					sample = Math.abs(sample);
+
+					if (sample > ((max - min) * 0.1))
 					{
-						peaks.push({idx, sample});
+						const peakIdx = Math.floor(idx / audioSamples.length * 100);
+						peaks[peakIdx] = Math.max(sample, peaks[peakIdx]);
 					}
 
 					return peaks;
-				}, []);
+				}, new Array(100).fill(0));
 			}
 
-			function render_peaks_into_canvas(peaks, audioSampleSize)
+			function render_peaks_into_svg(peaks, audioSampleSize)
 			{
-				const canvas = document.getElementById("audio-peaks-canvas");
-				const context = canvas.getContext("2d");
-
-				context.fillStyle = "goldenrod";
-
-				for (let i = 0; i < peaks.length; i++)
+				peaks.forEach((peak, idx)=>
 				{
-					const x = (peaks[i].idx / audioSampleSize) * canvas.width;
-					context.fillRect(x, 0, x+1, canvas.height);
-				}
+					if (!peak)
+					{
+						return;
+					}
+					
+					const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+
+					rect.setAttribute("width", "1");
+					rect.setAttribute("height", "10");
+					rect.setAttribute("x", `${idx}`);
+					rect.setAttribute("y", "0");
+
+					rect.style.strokeWidth = "0";
+					rect.style.fill = "goldenrod";
+					rect.style.stroke = "transparent";
+					rect.style.shapeRendering = "crispedges";
+
+					document.getElementById("audio-peaks-image").appendChild(rect);
+				});
 			}
 		</script>
 	</body>
