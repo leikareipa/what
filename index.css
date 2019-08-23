@@ -43,7 +43,7 @@ body
     bottom: 35px;
     left: 50%;
     transform: translateX(-50%);
-    width: 95%;
+    width: 98%;
     height: 10px;
 }
 
@@ -58,7 +58,7 @@ body
     top: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: calc(100% - 28px); /* Minus the size of the slider nub.*/
+    width: calc(100% - 24px); /* Minus the size of the slider nub.*/
     height: 10px;
     background-color: rgb(141, 141, 141);
     border-radius: 5px;
@@ -106,7 +106,7 @@ body
     appearance: none;
     width: 1px;
     height: 1px;
-    padding: 14px;
+    padding: 12px;
     border-radius: 50%; 
     background: rgb(255, 255, 255);
     background: transparent;
