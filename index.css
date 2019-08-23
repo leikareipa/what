@@ -3,39 +3,53 @@ body
     background-color: black;
     color: lightgray;
     text-align: center;
+    margin: 0;
+    padding: 0;
 }
 
 #content
 {
     display: inline-block;
     text-align: left;
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
 }
 
-#video-container
+#video-file-selector
 {
-    position: relative;
-    width: 640px;
-    height: 480px;
-    background-color: black;
+    z-index: 1;
+    position: absolute;
+    top: 2px;
+    left: 2px;
 }
 
 #video-player
 {
     position: absolute;
+    z-index: 0;
     top: 0;
     left: 0;
     width: 100%;
-    height: 470px;
+    height: 100%;
     outline: none;
 }
 
 #video-controls
 {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
+    bottom: 35px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 95%;
     height: 10px;
+}
+
+#video-seek-bar
+{
+    width: 100%;
 }
 
 #audio-peaks

@@ -8,15 +8,14 @@
 	</head>
 	<body>
 		<div id="content">
-			<input type="file" id="video-file-selector"><br>
 
-			<div id="video-container">
-				<video id="video-player" autoplay></video>
-				<div id="video-controls">
-					<input type="range" id="video-seek-bar" value="0" step="0.00001" class="slider">
-					<div id="audio-peaks">
-						<canvas id="audio-peaks-canvas" width="640" height="10"></canvas>
-					</div>
+			<input type="file" id="video-file-selector">
+
+			<video id="video-player" autoplay loop></video>
+
+			<div id="video-controls">
+				<input type="range" id="video-seek-bar" value="0" step="0.00001" class="slider">
+				<div id="audio-peaks">
 				</div>
 			</div>
 		</div>
@@ -37,7 +36,7 @@
 				document.getElementById("video-player").setAttribute("src", URL.createObjectURL(this.files[0]));
 				document.getElementById("video-player").setAttribute("type", this.files[0].type);
 
-				render_peaks_into_canvas(audioPeaks, rawAudio.channels[0].length);
+			//	render_peaks_into_canvas(audioPeaks, rawAudio.channels[0].length);
 
 				/*
 				const peaks = find_audio_peaks(rawAudio.channels[0]);
@@ -47,7 +46,7 @@
 				});
 				*/
 			};
-			
+
 			function update_seek_bar_position()
 			{
 				const player = document.getElementById("video-player");
