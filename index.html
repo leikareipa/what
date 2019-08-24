@@ -16,18 +16,15 @@
 			<div id="video-controls">
 				<input type="range" id="video-seek-bar" value="0" step="0.00001" class="slider">
 				<div id="audio-peaks">
-					<svg id="audio-peaks-image" viewBox="0 0 100 10" preserveAspectRatio="none"></svg>
+					<svg id="audio-peaks-image" viewBox="0 0 100 10" preserveAspectRatio="none">
+						<rect id="video-progress-bar" width="0" height="100%" x="0" y="0"
+						      style="stroke-width: 0; fill: rgba(112, 112, 112, 0.7);"></rect>
+					</svg>
 				</div>
 			</div>
 		</div>
 		
 		<script>
-			document.getElementById("video-seek-bar").oninput = function()
-			{
-				const player = document.getElementById("video-player");
-				player.currentTime = (player.duration * (this.value / 100))
-			}
-
 			document.getElementById("video-file-selector").onchange = async function()
 			{
 				const rawAudio = await get_raw_audio(this.files[0]);
@@ -39,13 +36,22 @@
 				document.getElementById("video-player").setAttribute("type", this.files[0].type);
 			};
 
+			document.getElementById("video-seek-bar").oninput = function()
+			{
+				const player = document.getElementById("video-player");
+				player.currentTime = (player.duration * (this.value / 100))
+			}
+
 			function update_seek_bar_position()
 			{
 				const player = document.getElementById("video-player");
 
 				if (!player.paused)
 				{
-					document.getElementById("video-seek-bar").value = ((player.currentTime / player.duration) * 100);
+					const percentProgress = ((player.currentTime / player.duration) * 100);
+
+					document.getElementById("video-seek-bar").value = percentProgress;
+					document.getElementById("video-progress-bar").setAttribute("width", `${percentProgress}`);
 				}
 				
 				requestAnimationFrame(update_seek_bar_position);
@@ -81,17 +87,14 @@
 					fileReader.readAsArrayBuffer(videoFile);
 					fileReader.onloadend = async()=>
 					{
-						const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+						const audioContext = new AudioContext();
 						const decodedAudioData = await audioContext.decodeAudioData(fileReader.result);
 
-						const returnData =
-						{
+						resolve({
 							duration: decodedAudioData.duration,
 							sampleRate: decodedAudioData.sampleRate,
 							channels: new Array(decodedAudioData.numberOfChannels).fill().map((elem, idx)=>decodedAudioData.getChannelData(idx)),
-						}
-
-						resolve(returnData);
+						});
 					};
 				});
 			}
@@ -148,12 +151,12 @@
 					const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
 
 					rect.setAttribute("width", "1");
-					rect.setAttribute("height", "10");
+					rect.setAttribute("height", "100%");
 					rect.setAttribute("x", `${idx}`);
 					rect.setAttribute("y", "0");
 
 					rect.style.strokeWidth = "0";
-					rect.style.fill = "goldenrod";
+					rect.style.fill = "rgba(127, 255, 255, 0.5)";
 					rect.style.stroke = "transparent";
 					rect.style.shapeRendering = "crispedges";
 
