@@ -40,7 +40,7 @@ body
 #video-controls
 {
     position: absolute;
-    bottom: 7%;
+    bottom: 5%;
     left: 50%;
     transform: translateX(-50%);
     width: 98%;

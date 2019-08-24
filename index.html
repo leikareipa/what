@@ -9,31 +9,67 @@
 	<body>
 		<div id="content">
 
-			<input type="file" id="video-file-selector">
+			<input type="file" id="video-file-selector" accept="video/*">
 
 			<video id="video-player" autoplay loop></video>
 
 			<div id="video-controls">
+
 				<input type="range" id="video-seek-bar" value="0" step="0.00001" class="slider">
+
 				<div id="audio-peaks">
+
 					<svg id="audio-peaks-image" viewBox="0 0 100 10" preserveAspectRatio="none">
+
 						<rect id="video-progress-bar" width="0" height="100%" x="0" y="0"
-						      style="stroke-width: 0; fill: rgba(112, 112, 112, 0.7);"></rect>
+							  style="stroke-width: 0; fill: rgba(112, 112, 112, 0.7);"></rect>
+							  
 					</svg>
+
 				</div>
+
 			</div>
 		</div>
 		
+		<script src="src/extract-video-audio.js"></script>
 		<script>
+			// A thread where we'll parse the raw audio samples to find magnitude peaks.
+			const peakThread = new Worker("./src/extract-video-audio-peaks.js");
+
+			peakThread.onmessage = (message)=>
+			{
+				message = message.data;
+
+				switch (message.header)
+				{
+					case "audio-peaks":
+					{
+						render_peaks_into_svg(message.body.audioPeaks);
+				
+						document.getElementById("video-player").setAttribute("src", URL.createObjectURL(message.body.videoFile));
+						document.getElementById("video-player").setAttribute("type", message.body.videoFile.type);
+
+						break;
+					}
+					default: console.warn(`Unknown message header "${message.header}".`); break;
+				}
+			}
+
 			document.getElementById("video-file-selector").onchange = async function()
 			{
-				const rawAudio = await get_raw_audio(this.files[0]);
-				const audioPeaks = get_audio_peaks(rawAudio.channels[0]);
+				const videoFile = this.files[0];
 
-				render_peaks_into_svg(audioPeaks, rawAudio.channels[0].length);
-				
-				document.getElementById("video-player").setAttribute("src", URL.createObjectURL(this.files[0]));
-				document.getElementById("video-player").setAttribute("type", this.files[0].type);
+				this.setAttribute("disabled", "true");
+
+				get_raw_audio(videoFile).then(rawAudio=>peakThread.postMessage(
+				{
+					header:"extract-audio-peaks",
+					body:
+					{
+						videoFile,
+						audioSamples: rawAudio.channels[0],
+					}
+				}));
 			};
 
 			document.getElementById("video-seek-bar").oninput = function()
@@ -58,88 +94,7 @@
 			}
 			requestAnimationFrame(update_seek_bar_position);
 
-            // Extracts the raw audio samples from the given video file.
-			//
-			// Returns a Promise that resolves to an object of the following kind:
-			//
-			//     {
-			//	       duration,
-		    //         sampleRate,
-			//         channels
-			//         [
-			//             Float32Array,
-			//             Float32Array,
-			//             ...
-			//             Float32Array,
-			//         ],
-			//     }
-			//
-			// where 'duration' gives the audio's duration in seconds; 'sampleRate' the audio's sample
-			// rate; and 'channels' an array of Float32Array objects, each giving the raw samples of a
-			// particular channel of audio. (The audio's channel count is equal to channels.length.)
-			//
-			async function get_raw_audio(videoFile)
-			{
-				return new Promise((resolve)=>
-				{
-					const fileReader = new FileReader();
-
-					fileReader.readAsArrayBuffer(videoFile);
-					fileReader.onloadend = async()=>
-					{
-						const audioContext = new AudioContext();
-						const decodedAudioData = await audioContext.decodeAudioData(fileReader.result);
-
-						resolve({
-							duration: decodedAudioData.duration,
-							sampleRate: decodedAudioData.sampleRate,
-							channels: new Array(decodedAudioData.numberOfChannels).fill().map((elem, idx)=>decodedAudioData.getChannelData(idx)),
-						});
-					};
-				});
-			}
-
-			// Finds samples in the audio whose magnitude exceeds a threshold. Returns a
-			// list of these samples in an Array(100), where each element gives the sample's
-			// magnitude (or 0 if the threshold is not exceeded). The array has 100 elements,
-			// corresponding to the length of the audio in percentages.
-			//
-			// The audio is expected to be provided as an array of samples, e.g. Float32Array.
-			//
-			function get_audio_peaks(audioSamples)
-			{
-				const [min, max, median] = (()=>
-				{
-					const median = audioSamples.slice().sort()[audioSamples.length / 2];
-					let min = Number.MAX_SAFE_INTEGER;
-					let max = Number.MIN_SAFE_INTEGER;
-
-					for (let i = 0; i < audioSamples.length; i++)
-					{
-						const sample = Math.abs(audioSamples[i]);
-
-						if (sample > max) max = sample;
-						if (sample < min) min = sample;
-					}
-
-					return [min, max, median];
-				})();
-
-				return audioSamples.reduce((peaks, sample, idx)=>
-				{
-					sample = Math.abs(sample);
-
-					if (sample > ((max - min) * 0.1))
-					{
-						const peakIdx = Math.floor(idx / audioSamples.length * 100);
-						peaks[peakIdx] = Math.max(sample, peaks[peakIdx]);
-					}
-
-					return peaks;
-				}, new Array(100).fill(0));
-			}
-
-			function render_peaks_into_svg(peaks, audioSampleSize)
+			function render_peaks_into_svg(peaks)
 			{
 				peaks.forEach((peak, idx)=>
 				{
@@ -157,7 +112,6 @@
 
 					rect.style.strokeWidth = "0";
 					rect.style.fill = "rgba(127, 255, 255, 0.5)";
-					rect.style.stroke = "transparent";
 					rect.style.shapeRendering = "crispedges";
 
 					document.getElementById("audio-peaks-image").appendChild(rect);
