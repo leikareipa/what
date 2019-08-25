@@ -27,6 +27,8 @@
 // rate; and 'channels' an array of Float32Array objects, each giving the raw samples of a
 // particular channel of audio. (The audio's channel count is equal to channels.length.)
 //
+// The Promise resolves to false if something went wrong.
+//
 async function get_raw_audio(videoFile)
 {
     return new Promise((resolve)=>
@@ -37,13 +39,21 @@ async function get_raw_audio(videoFile)
         fileReader.onloadend = async()=>
         {
             const audioContext = new AudioContext();
-            const decodedAudioData = await audioContext.decodeAudioData(fileReader.result);
 
-            resolve({
-                duration: decodedAudioData.duration,
-                sampleRate: decodedAudioData.sampleRate,
-                channels: new Array(decodedAudioData.numberOfChannels).fill().map((elem, idx)=>decodedAudioData.getChannelData(idx)),
-            });
+            try
+            {
+                const decodedAudioData = await audioContext.decodeAudioData(fileReader.result);
+
+                resolve({
+                    duration: decodedAudioData.duration,
+                    sampleRate: decodedAudioData.sampleRate,
+                    channels: new Array(decodedAudioData.numberOfChannels).fill().map((elem, idx)=>decodedAudioData.getChannelData(idx)),
+                });
+            }
+            catch
+            {
+                resolve(false);
+            }
         };
     });
 }

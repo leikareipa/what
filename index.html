@@ -10,6 +10,12 @@
 	<body>
 		<div id="video-loading-spinner">
 			<i class="fas fa-spinner fa-spin"></i>
+			Processing video data...
+		</div>
+
+		<div id="fail-message">
+			<i class="fas fa-trash"></i>
+			Unsupported video!
 		</div>
 
 		<div id="content">
@@ -78,15 +84,27 @@
 
 				this.setAttribute("disabled", "true");
 
-				get_raw_audio(videoFile).then(rawAudio=>peakThread.postMessage(
+				get_raw_audio(videoFile).then(rawAudio=>
 				{
-					header:"extract-audio-peaks",
-					body:
+					if (rawAudio)
 					{
-						videoFile,
-						audioSamples: rawAudio.channels[0],
+						peakThread.postMessage(
+						{
+							header:"extract-audio-peaks",
+							body:
+							{
+								videoFile,
+								audioSamples: rawAudio.channels[0],
+							}
+						});
 					}
-				}));
+					else
+					{
+						console.error("Could not extract audio data from the video.");
+						document.getElementById("video-loading-spinner").style.display = "none";
+						document.getElementById("fail-message").style.display = "block";
+					}
+				});
 			};
 
 			document.getElementById("video-seek-bar").oninput = function()
