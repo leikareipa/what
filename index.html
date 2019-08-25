@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>What?</title>
+		<title>What? - Tarpeeksi Hyvae Soft</title>
 		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
 		<meta name="viewport" content="width=device-width">
 		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" integrity="sha384-gfdkjb5BdAXd+lj+gudLWI+BXq4IuLW5IT+brZEZsLFm++aCMlF1V92rMkPaX4PP" crossorigin="anonymous">
@@ -19,26 +19,23 @@
 		</div>
 
 		<div id="content">
-
+			<div id="header">
+				What?
+				<div id="sub-header">
+					A video player whose seek bar indicates magnitude peaks in the audio.
+					<a href="mailto:sw@tarpeeksihyvaesoft.com">Contact</a>
+				</div>
+			</div>
 			<input type="file" id="video-file-selector" accept="video/*">
-
 			<video id="video-player" autoplay loop></video>
-
 			<div id="video-controls">
-
 				<input type="range" id="video-seek-bar" value="0" step="0.00001" class="slider">
-
 				<div id="audio-peaks">
-
 					<svg id="audio-peaks-image" viewBox="0 0 100 10" preserveAspectRatio="none">
-
 						<rect id="video-progress-bar" width="0" height="100%" x="0" y="0"
 							  style="stroke-width: 0; fill: rgba(112, 112, 112, 0.7);"></rect>
-							  
 					</svg>
-
 				</div>
-
 			</div>
 		</div>
 		
@@ -47,27 +44,20 @@
 			// A thread where we'll parse the raw audio samples to find magnitude peaks.
 			const peakThread = new Worker("./src/extract-video-audio-peaks.js");
 
+			// Process messages arriving from the peak-detecting thread.
 			peakThread.onmessage = (message)=>
 			{
 				message = message.data;
 
 				switch (message.header)
 				{
+					// Receive the audio peaks the thread detected. The peaks will be
+					// given as an Array(100) via message.body.audioPeaks. The original
+					// video source is given via message.body.videoFile.
 					case "audio-peaks":
 					{
-						render_peaks_into_svg(message.body.audioPeaks);
-				
-						// Set up the video player and controls.
-						{
-							const player = document.getElementById("video-player");
-							const controls = document.getElementById("video-controls");
-
-							player.setAttribute("src", URL.createObjectURL(message.body.videoFile));
-							player.setAttribute("type", message.body.videoFile.type);
-							controls.style.opacity = "1";
-						}
-
-						document.getElementById("video-loading-spinner").style.display = "none";
+						render_peaks_into_seek_bar(message.body.audioPeaks);
+						start_video_playback(message.body.videoFile);
 
 						break;
 					}
@@ -75,9 +65,11 @@
 				}
 			}
 
-			// Load a video file.
+			// Process the user-specified video file. Once processing is finished, the
+			// video will be added to the on-page HTML5 video player.
 			document.getElementById("video-file-selector").onchange = async function()
 			{
+				document.getElementById("video-file-selector").style.display = "none";
 				document.getElementById("video-loading-spinner").style.display = "block";
 
 				const videoFile = this.files[0];
@@ -107,12 +99,33 @@
 				});
 			};
 
+			// Seek the video based on the user's interaction with the seek bar.
 			document.getElementById("video-seek-bar").oninput = function()
 			{
 				const player = document.getElementById("video-player");
 				player.currentTime = (player.duration * (this.value / 100))
 			}
 
+			function start_video_playback(videoFile)
+			{
+				const player = document.getElementById("video-player");
+				const header = document.getElementById("header");
+				const controls = document.getElementById("video-controls");
+				const loadSpinner = document.getElementById("video-loading-spinner");
+				const fileSelector = document.getElementById("video-file-selector");
+
+				player.setAttribute("src", URL.createObjectURL(videoFile));
+				player.setAttribute("type", videoFile.type);
+
+				header.style.display = "none";
+				player.style.display = "block";
+				controls.style.opacity = "1";
+				loadSpinner.style.display = "none";
+				fileSelector.style.display = "none";
+				document.body.style.backgroundColor = "black";
+			}
+
+			// Update the seek bar's position as the video plays.
 			function update_seek_bar_position()
 			{
 				const player = document.getElementById("video-player");
@@ -129,8 +142,12 @@
 			}
 			requestAnimationFrame(update_seek_bar_position);
 
-			function render_peaks_into_svg(peaks)
+			// Generates an SVG image to be displayed in the video's seek bar, indicating
+			// where in the video the audio peaks are.
+			function render_peaks_into_seek_bar(peaks)
 			{
+				const svgImage = document.getElementById("audio-peaks-image");
+
 				peaks.forEach((peak, idx)=>
 				{
 					if (!peak)
@@ -146,10 +163,10 @@
 					rect.setAttribute("y", "0");
 
 					rect.style.strokeWidth = "0";
-					rect.style.fill = "rgba(127, 255, 255, 0.5)";
+					rect.style.fill = "rgba(255, 200, 100, 0.6)";
 					rect.style.shapeRendering = "crispedges";
 
-					document.getElementById("audio-peaks-image").appendChild(rect);
+					svgImage.appendChild(rect);
 				});
 			}
 		</script>
