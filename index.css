@@ -8,8 +8,13 @@ body
 
 #app
 {
-    width: 100vw;
-    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
 }
 
 .message
@@ -18,74 +23,80 @@ body
     text-align: center;
     padding: 7px;
     position: absolute;
-    top: 1%;
-    right: 1%;
-    background-color: rgba(255, 255, 255, 0.5);
+    top: 0;
+    right: 0;
+    background-color: white;
     color: black;
-    border-radius: 4px;
+    border-radius: 0;
+    box-shadow: 0 5px 5px rgba(0, 0, 0, 0.4);
+    display: none; /* Disabled for now.*/
+}
+
+#video-file-selector
+{
+    flex-shrink: 0;
+}
+
+#video-player-container
+{
+    position: relative;
+    z-index: 2;
+    overflow: hidden;
+    flex-grow: 1;
 }
 
 #video-player
 {
-    position: absolute;
-    z-index: 2; /* Above the header.*/
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
     outline: none;
 }
 
-#test-canvas
-{
-    width: 96vw;
-    height: 100%;
-}
-
-#bar-container
+#controls-container
 {
     overflow: hidden;
     z-index: 3; /* Above the video player.*/
-    position: absolute;
-    bottom: 2vh;
-    left: 2vw;
-    width: 96vw;
-    height: 60px;
-    background-color: transparent;
-    border-radius: 4px;
-
+    position: relative;
+    height: 70px;
+    min-height: 70px;
+    max-height: 70px;
     background: repeating-linear-gradient(-45deg,
                                           transparent,
-                                          transparent 15px,
-                                          rgba(255, 255, 255, 0.15) 15px,
-                                          rgba(255, 255, 255, 0.15) 30px);
+                                          transparent 20px,
+                                          rgba(255, 255, 255, 0.14) 20px,
+                                          rgba(255, 255, 255, 0.14) 40px);
+    background-color: gray;
 
-    transition: height 0.05s ease-in-out,
-                opacity 0.05s ease-in-out;
+    transition: height 0.1s linear,
+                min-height 0.1s linear,
+                max-height 0.1s linear,
+                opacity 0.1s linear;
 }
 
-#bar-container:hover
+#controls-container:hover
 {
-    height: 220px;
-    opacity: 1;
+    height: 200px;
+    min-height: 200px;
+    max-height: 200px;
 }
 
-#canvas-container
+#spectrogram-container
 {
-    width: 96vw;
+    width: 0; /* Will be adjusted up as the video processing progresses, to reveal more of the canvas being contained.*/
     height: 100%;
     display: block;
     background-color: white;
     overflow: hidden;
-
-    transition: height 0.05s ease-in-out,
-                opacity 0.05s ease-in-out;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+    position: relative;
+    z-index: 4; /* Above the bar container.*/
+    border-right: 1px solid dimgray;
 }
 
-#bar-container:hover #canvas-container
+#spectrogram
 {
-    background-size: 25px 25px;
-    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+    width: 100vw;
+    height: 100%;
 }
 
 [v-cloak]
@@ -93,3 +104,23 @@ body
     display: none !important;
 }
 
+@media only screen and (max-width: 800px)
+{
+    #controls-container
+    {
+        flex-basis: 30px;
+        min-height: 30px;
+        max-height: 30px;
+    }
+
+    #app
+    {
+        display: block;
+        overflow-y: scroll;
+    }
+
+    #video-player-container
+    {
+        height: calc(100vh - 30px); /* Minus the height of the control bar.*/
+    }
+}
