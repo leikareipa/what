@@ -1,174 +1,152 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>What? - Tarpeeksi Hyvae Soft</title>
-		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
-		<meta name="viewport" content="width=device-width">
-		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" integrity="sha384-gfdkjb5BdAXd+lj+gudLWI+BXq4IuLW5IT+brZEZsLFm++aCMlF1V92rMkPaX4PP" crossorigin="anonymous">
-		<link rel="stylesheet" type="text/css" href="index.css">
+		<title>What - Tarpeeksi Hyvae Soft</title>
+        <meta http-equiv="content-type"
+              content="text/html; charset=UTF-8">
+        <meta name="viewport"
+              content="width=device-width">
+        <link rel="stylesheet"
+              href="https://use.fontawesome.com/releases/v5.6.1/css/all.css"
+              integrity="sha384-gfdkjb5BdAXd+lj+gudLWI+BXq4IuLW5IT+brZEZsLFm++aCMlF1V92rMkPaX4PP"
+              crossorigin="anonymous">
+        <link rel="stylesheet"
+              type="text/css"
+              href="index.css">
 	</head>
 	<body>
-		<div id="video-loading-spinner">
-			<i class="fas fa-spinner fa-spin"></i>
-			Processing video data...
-		</div>
+        <div id="app">
 
-		<div id="fail-message">
-			<i class="fas fa-trash"></i>
-			Unsupported video!
-		</div>
+            <input v-visible-if="!isVideoPlaying"
+                   type="file"
+                   id="video-file-selector"
+                   accept="video/*">
 
-		<div id="content">
-			<div id="header">
-				What?
-				<div id="sub-header">
-					A video player whose seek bar indicates magnitude peaks in the audio.
-					<a href="mailto:sw@tarpeeksihyvaesoft.com">Contact</a>
-				</div>
-			</div>
-			<input type="file" id="video-file-selector" accept="video/*">
-			<video id="video-player" autoplay loop></video>
-			<div id="video-controls">
-				<input type="range" id="video-seek-bar" value="0" step="0.00001" class="slider">
-				<div id="audio-peaks">
-					<svg id="audio-peaks-image" viewBox="0 0 100 10" preserveAspectRatio="none">
-						<rect id="video-progress-bar" width="0" height="100%" x="0" y="0"
-							  style="stroke-width: 0; fill: rgba(112, 112, 112, 0.7);"></rect>
-					</svg>
-				</div>
-			</div>
-		</div>
-		
-		<script src="src/extract-video-audio.js"></script>
-		<script>
-			// A thread where we'll parse the raw audio samples to find magnitude peaks.
-			const peakThread = new Worker("./src/extract-video-audio-peaks.js");
+            <video v-cloak
+                   v-visible-if="isVideoPlaying"
+                   id="video-player"></video>
 
-			// Process messages arriving from the peak-detecting thread.
-			peakThread.onmessage = (message)=>
-			{
-				message = message.data;
+            <div v-cloak
+                 v-visible-if="isVideoPlaying"
+                 id="bar-container">
+                <div id="canvas-container">
+                    <canvas id="test-canvas" width="600" height="100"></canvas>
+                </div>
+            </div>
 
-				switch (message.header)
-				{
-					// Receive the audio peaks the thread detected. The peaks will be
-					// given as an Array(100) via message.body.audioPeaks. The original
-					// video source is given via message.body.videoFile.
-					case "audio-peaks":
-					{
-						render_peaks_into_seek_bar(message.body.audioPeaks);
-						start_video_playback(message.body.videoFile);
+            <div v-cloak
+                 v-visible-if="isVideoPlaying && !isVideoProcessingFinished"
+                 class="message">
+                Processing
+            </div>
 
-						break;
-					}
-					default: console.warn(`Unknown message header "${message.header}".`); break;
-				}
-			}
+        </div>
 
-			// Process the user-specified video file. Once processing is finished, the
-			// video will be added to the on-page HTML5 video player.
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+        <script>
+            Vue.directive("visible-if", (el, binding)=>
+            {
+                el.style.visibility = (binding.value? "visible" : "hidden");
+            });
+
+            const ui = new Vue({
+                el: "#app",
+                data: {
+                    isVideoPlaying: false,
+                    isVideoProcessingFinished: false,
+                }
+            });
+
+            const renderWidth = document.getElementById("test-canvas").width;
+            const renderHeight = document.getElementById("test-canvas").height;
+            const renderContext = document.getElementById("test-canvas").getContext("2d");
+            const canvasImage = renderContext.getImageData(0, 0, renderWidth, renderHeight);
+            let percentCompleted = 0;
+
+            function set_spectrogram_value(x, y, value)
+            {
+                y = (renderHeight - y - 1);
+
+                const idx = ((x + y * renderWidth) * 4);
+                canvasImage.data[idx+3] = value;
+            }
+
+            function get_spectrogram_value(x, y)
+            {
+                y = (renderHeight - y - 1);
+
+                const idx = ((x + y * renderWidth) * 4);
+                return canvasImage.data[idx+3];
+            }
+
+            for (let y = 0; y < renderHeight; y++)
+            {
+                for (let x = 0; x < renderWidth; x++)
+                {
+                    const idx = ((x + y * renderWidth) * 4);
+                    canvasImage.data[idx+0] = 0;
+                    canvasImage.data[idx+1] = 0;
+                    canvasImage.data[idx+2] = 0;
+                    canvasImage.data[idx+3] = 0;
+                }
+            }
+
+            setInterval(()=>
+            {
+                document.getElementById("canvas-container").style.width = `${Math.min(96, percentCompleted * 96)}vw`;
+                renderContext.putImageData(canvasImage, 0, 0);
+
+                /// TODO: Stop this interval after video processing is done.
+            }, 1000);
+
 			document.getElementById("video-file-selector").onchange = async function()
 			{
-				document.getElementById("video-file-selector").style.display = "none";
-				document.getElementById("video-loading-spinner").style.display = "block";
-
 				const videoFile = this.files[0];
+                const player = document.getElementById("video-player");
+                const audioContext = new AudioContext();
 
-				this.setAttribute("disabled", "true");
+                player.src = URL.createObjectURL(videoFile);
+                player.playbackRate = 16;
+                player.onplay = ()=>
+                {
+                    ui.isVideoPlaying = true;
+                }
+                player.onended = ()=>
+                {
+                    ui.isVideoProcessingFinished = true;
+                    percentCompleted = 1;
+                }
 
-				get_raw_audio(videoFile).then(rawAudio=>
-				{
-					if (rawAudio)
-					{
-						peakThread.postMessage(
-						{
-							header:"extract-audio-peaks",
-							body:
-							{
-								videoFile,
-								audioSamples: rawAudio.channels[0],
-							}
-						});
-					}
-					else
-					{
-						console.error("Could not extract audio data from the video.");
-						document.getElementById("video-loading-spinner").style.display = "none";
-						document.getElementById("fail-message").style.display = "block";
-					}
-				});
-			};
+                const audioSource = audioContext.createMediaElementSource(player);
+                const audioAnalyzer = audioContext.createAnalyser();
+                audioSource.connect(audioAnalyzer);
+                audioAnalyzer.connect(audioContext.destination);
 
-			// Seek the video based on the user's interaction with the seek bar.
-			document.getElementById("video-seek-bar").oninput = function()
-			{
-				const player = document.getElementById("video-player");
-				player.currentTime = (player.duration * (this.value / 100))
-			}
+                player.play();
 
-			function start_video_playback(videoFile)
-			{
-				const player = document.getElementById("video-player");
-				const header = document.getElementById("header");
-				const controls = document.getElementById("video-controls");
-				const loadSpinner = document.getElementById("video-loading-spinner");
-				const fileSelector = document.getElementById("video-file-selector");
+                // Sample the audio buffer every x milliseconds.
+                setInterval(()=>
+                {
+                    const spectrum = new Uint8Array(audioAnalyzer.frequencyBinCount);
+                    audioAnalyzer.getByteFrequencyData(spectrum);
 
-				player.setAttribute("src", URL.createObjectURL(videoFile));
-				player.setAttribute("type", videoFile.type);
+                    percentCompleted = ((player.currentTime / player.duration) || 0);
 
-				header.style.display = "none";
-				player.style.display = "block";
-				controls.style.opacity = "1";
-				loadSpinner.style.display = "none";
-				fileSelector.style.display = "none";
-				document.body.style.backgroundColor = "black";
-			}
+                    for (let y = 0; y < renderHeight; y++)
+                    {
+                        const sampleIdx = Math.floor(y * ((audioAnalyzer.frequencyBinCount / 8) / renderHeight));
+                        const amplitude = Math.min(255, (spectrum[sampleIdx] * 3));
+                        const x = Math.floor(renderWidth * percentCompleted);
 
-			// Update the seek bar's position as the video plays.
-			function update_seek_bar_position()
-			{
-				const player = document.getElementById("video-player");
-
-				if (!player.paused)
-				{
-					const percentProgress = ((player.currentTime / player.duration) * 100);
-
-					document.getElementById("video-seek-bar").value = percentProgress;
-					document.getElementById("video-progress-bar").setAttribute("width", `${percentProgress}`);
-				}
-				
-				requestAnimationFrame(update_seek_bar_position);
-			}
-			requestAnimationFrame(update_seek_bar_position);
-
-			// Generates an SVG image to be displayed in the video's seek bar, indicating
-			// where in the video the audio peaks are.
-			function render_peaks_into_seek_bar(peaks)
-			{
-				const svgImage = document.getElementById("audio-peaks-image");
-
-				peaks.forEach((peak, idx)=>
-				{
-					if (!peak)
-					{
-						return;
-					}
-					
-					const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-
-					rect.setAttribute("width", "1");
-					rect.setAttribute("height", "100%");
-					rect.setAttribute("x", `${idx}`);
-					rect.setAttribute("y", "0");
-
-					rect.style.strokeWidth = "0";
-					rect.style.fill = "rgba(255, 200, 100, 0.6)";
-					rect.style.shapeRendering = "crispedges";
-
-					svgImage.appendChild(rect);
-				});
-			}
-		</script>
-	</body>
+                        if (get_spectrogram_value(x, y) < amplitude)
+                        {
+                            set_spectrogram_value(x, y, amplitude);
+                        }
+                    }
+                }, 10);
+            };
+        </script>
+    </body>
 </html>
+
