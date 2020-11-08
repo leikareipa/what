@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>What - Tarpeeksi Hyvae Soft</title>
+		<title>What? - Tarpeeksi Hyvae Soft</title>
         <meta http-equiv="content-type"
               content="text/html; charset=UTF-8">
         <meta name="viewport"
@@ -46,7 +46,7 @@
                      :class="isVideoProcessingFinished? 'processing-finished' : ''">
 
                     <canvas id="spectrogram"
-                            width="600"
+                            width="1000"
                             height="100">
                     </canvas>
                             
@@ -225,7 +225,7 @@
                     for (let y = 0; y < renderHeight; y++)
                     {
                         const sampleIdx = Math.floor(y * ((audioAnalyzer.frequencyBinCount / 8) / renderHeight));
-                        const amplitude = (255 - Math.min(255, (spectrum[sampleIdx] * 2)));
+                        const amplitude = Math.round(255 - Math.min(255, (spectrum[sampleIdx] * 2.5)));
                         const x = Math.floor(renderWidth * playbackPos);
 
                         if (get_spectrogram_value(x, y) >= amplitude)
