@@ -25,7 +25,7 @@
             <div id="video-player-container"
                  v-cloak
                  v-visible-if="isVideoLoaded">
-                <video id="video-player"></video>
+                <video id="video-player" loop></video>
             </div>
 
             <div id="controls-container"
@@ -38,10 +38,13 @@
                 </div>
             </div>
 
-            <div class="message"
+            <div id="playback-rate-indicator"
                  v-cloak
-                 v-visible-if="isVideoLoaded && !isVideoProcessingFinished">
-                Processing
+                 v-visible-if="isVideoLoaded"
+                 v-on:click="increase_playback_rate()">
+
+                {{playbackRate}}
+
             </div>
 
         </div>
@@ -54,12 +57,24 @@
                 el.style.visibility = (binding.value? "visible" : "hidden");
             });
 
+            const playbackRateValues = [1, 4, 8, 16];
+
             const ui = new Vue({
                 el: "#app",
                 data: {
                     isVideoLoaded: false,
                     isVideoPlaying: false,
                     isVideoProcessingFinished: false,
+
+                    playbackRate: playbackRateValues[0],
+                },
+                methods: {
+                    increase_playback_rate: function()
+                    {
+                        playbackRateValues.push(playbackRateValues.shift());
+                        this.playbackRate = playbackRateValues[0];
+                        playerElement.playbackRate = ui.playbackRate;
+                    },
                 }
             });
 
@@ -140,7 +155,7 @@
                 const audioContext = new AudioContext();
 
                 playerElement.src = URL.createObjectURL(videoFile);
-                playerElement.playbackRate = 16;
+                playerElement.playbackRate = ui.playbackRate;
                 playerElement.onplay = ()=>
                 {
                     ui.isVideoLoaded = true;

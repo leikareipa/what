@@ -17,19 +17,23 @@ body
     height: 100%;
 }
 
-.message
+#playback-rate-indicator
 {
-    z-index: 1000; /* Above all else.*/
+    z-index: 1000;
     text-align: center;
-    padding: 7px;
+    padding: 10px;
     position: absolute;
-    top: 0;
-    right: 0;
+    cursor: pointer;
+    min-width: 55px;
+    user-select: none;
+    top: 25px;
+    right: 50px;
+    font-size: 150%;
     background-color: white;
     color: black;
-    border-radius: 0;
+    font-weight: bold;
+    border-radius: 50px;
     box-shadow: 0 5px 5px rgba(0, 0, 0, 0.4);
-    display: none; /* Disabled for now.*/
 }
 
 #video-file-selector
