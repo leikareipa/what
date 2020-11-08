@@ -117,7 +117,7 @@
                 {
                     const barRect = seekBarElement.getBoundingClientRect();
                     const barWidth = parseFloat(getComputedStyle(seekBarElement).getPropertyValue("width"));
-                    const x = (event.screenX - barRect.left);
+                    const x = (event.clientX - barRect.left);
                     const percentPlayback = (x / barWidth);
 
                     // Give the audio buffer some time to clear itself, or we'll get artefacts
