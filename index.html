@@ -32,8 +32,7 @@
                  v-cloak
                  v-visible-if="isVideoLoaded">
 
-                <div id="play-button"
-                     v-cloak
+                <div class="control-button"
                      v-on:click="toggle_video_playback()">
 
                     <i :class="(isVideoPlaying
@@ -52,10 +51,11 @@
                             
                 </div>
 
-                <div id="playback-rate-indicator"
-                     v-cloak
+                <div class="control-button"
                      v-on:click="increase_playback_rate()">
 
+                    <i class="fas fa-times"
+                       style="margin-right: 5px; font-size: 55%;"></i>
                     {{playbackRate}}
 
                 </div>

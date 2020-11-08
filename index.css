@@ -17,8 +17,11 @@ body
     height: 100%;
 }
 
-#playback-rate-indicator
+.control-button
 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     box-sizing: border-box;
     z-index: 1000;
     text-align: center;
@@ -28,27 +31,11 @@ body
     height: 100%;
     user-select: none;
     font-size: 150%;
-    background-color: white;
-    color: black;
+    background-color: black;
+    color: white;
     font-weight: bold;
-    margin-left: 8px;
-}
-
-#play-button
-{
-    font-size: 200%;
-    box-sizing: border-box;
-    z-index: 1000;
-    text-align: center;
-    padding: 10px;
-    cursor: pointer;
-    width: 70px;
-    height: 100%;
-    user-select: none;
-    background-color: white;
-    color: black;
-    font-weight: bold;
-    margin-right: 8px;
+    margin: 8px;
+    font-family: sans-serif;
 }
 
 #video-file-selector
@@ -73,22 +60,26 @@ body
 
 #controls-container
 {
+    margin-bottom: 1px;
     display: flex;
     align-items: center;
     justify-content: left;
     width: 100vw;
     z-index: 3; /* Above the video player.*/
     position: relative;
-    height: 90px;
-    min-height: 90px;
-    max-height: 90px;
+    height: 60px;
+    min-height: 60px;
+    max-height: 60px;
 }
 
 #seek-bar
 {
+    border: 1px solid black;
+    overflow: hidden;
+    border-radius: 9px;
     position: relative;
     z-index: 1;
-    background-color: transparent;
+    background-color: black;
     height: 100%;
     width: calc(100% - 140px); /* Fill remaining horizontal space in the controls container.*/
     cursor: pointer;
@@ -98,10 +89,10 @@ body
                                           transparent 20px,
                                           rgba(255, 255, 255, 0.14) 20px,
                                           rgba(255, 255, 255, 0.14) 40px);
-    background-color: dimgray;
 
     transition: height 0.1s linear,
-                margin-top 0.1s linear;
+                margin-top 0.1s linear,
+                border-radius 0.1s linear;
 }
 
 #seek-bar:hover
