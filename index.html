@@ -25,7 +25,7 @@
             <div id="video-player-container"
                  v-cloak
                  v-visible-if="isVideoLoaded">
-                <video id="video-player" loop></video>
+                <video id="video-player"></video>
             </div>
 
             <div id="controls-container"
@@ -42,17 +42,14 @@
 
                 </div>
 
-                <div id="seek-bar">
+                <div id="seek-bar"
+                     :class="isVideoProcessingFinished? 'processing-finished' : ''">
 
-                    <div id="spectrogram-container">
-
-                        <canvas id="spectrogram"
-                                width="600"
-                                height="100">
-                        </canvas>
-                                
-                    </div>
-
+                    <canvas id="spectrogram"
+                            width="600"
+                            height="100">
+                    </canvas>
+                            
                 </div>
 
                 <div id="playback-rate-indicator"
@@ -111,27 +108,25 @@
             });
 
             const playerElement = document.getElementById("video-player");
-
+            
             // Set up clicking on the seek bar
             {
                 const seekBarElement = document.getElementById("seek-bar");
 
                 seekBarElement.onclick = (event)=>
                 {
-                    const barRect = event.target.getBoundingClientRect();
+                    const barRect = seekBarElement.getBoundingClientRect();
                     const barWidth = parseFloat(getComputedStyle(seekBarElement).getPropertyValue("width"));
-                    const x = (event.pageX - barRect.left); 
-                    const y = (event.pageY - barRect.top);
+                    const x = (event.screenX - barRect.left);
                     const percentPlayback = (x / barWidth);
 
-                    playerElement.currentTime = (playerElement.duration * percentPlayback);
-
-                    if (!ui.isVideoPlaying)
-                    {
+                    // Give the audio buffer some time to clear itself, or we'll get artefacts
+                    // in the spectrogram.
+                    playerElement.pause()
+                    setTimeout(()=>{
+                        playerElement.currentTime = (playerElement.duration * percentPlayback);
                         playerElement.play();
-                    }
-
-                    repaint_spectrogram();
+                    }, 200);
                 }
             }
 
@@ -140,14 +135,16 @@
             const renderHeight = spectrogramElement.height;
             const renderContext = spectrogramElement.getContext("2d");
             const canvasImage = renderContext.getImageData(0, 0, renderWidth, renderHeight);
-            let percentCompleted = 0;
 
             function set_spectrogram_value(x, y, value)
             {
                 y = (renderHeight - y - 1);
 
                 const idx = ((x + y * renderWidth) * 4);
-                canvasImage.data[idx+3] = value;
+                canvasImage.data[idx+0] = value;
+                canvasImage.data[idx+1] = value;
+                canvasImage.data[idx+2] = value;
+                canvasImage.data[idx+3] = 255;
             }
 
             function get_spectrogram_value(x, y)
@@ -155,15 +152,12 @@
                 y = (renderHeight - y - 1);
 
                 const idx = ((x + y * renderWidth) * 4);
-                return canvasImage.data[idx+3];
+                return canvasImage.data[idx+0];
             }
 
             function repaint_spectrogram()
             {
-                percentCompleted = Math.max(percentCompleted, ((playerElement.currentTime / playerElement.duration) || 0));
-                
                 renderContext.putImageData(canvasImage, 0, 0);
-                document.getElementById("spectrogram-container").style.width = `${Math.min(100, percentCompleted * 100)}%`;
             }
 
             for (let y = 0; y < renderHeight; y++)
@@ -171,9 +165,9 @@
                 for (let x = 0; x < renderWidth; x++)
                 {
                     const idx = ((x + y * renderWidth) * 4);
-                    canvasImage.data[idx+0] = 0;
-                    canvasImage.data[idx+1] = 0;
-                    canvasImage.data[idx+2] = 0;
+                    canvasImage.data[idx+0] = 255;
+                    canvasImage.data[idx+1] = 255;
+                    canvasImage.data[idx+2] = 255;
                     canvasImage.data[idx+3] = 0;
                 }
             }
@@ -202,15 +196,15 @@
                     ui.isVideoLoaded = true;
                     ui.isVideoPlaying = true;
                 }
-                playerElement.onpaused = ()=>
+                playerElement.onpause = ()=>
                 {
                     ui.isVideoPlaying = false;
                 }
                 playerElement.onended = ()=>
                 {
-                    ui.isVideoPlaying = false;
                     ui.isVideoProcessingFinished = true;
-                    percentCompleted = 1;
+                    playerElement.currentTime = 0;
+                    playerElement.play();
                 }
 
                 const audioSource = audioContext.createMediaElementSource(playerElement);
@@ -226,15 +220,15 @@
                     const spectrum = new Uint8Array(audioAnalyzer.frequencyBinCount);
                     audioAnalyzer.getByteFrequencyData(spectrum);
 
-                    percentCompleted = Math.max(percentCompleted, ((playerElement.currentTime / playerElement.duration) || 0));
+                    const playbackPos = ((playerElement.currentTime / playerElement.duration) || 0);
 
                     for (let y = 0; y < renderHeight; y++)
                     {
                         const sampleIdx = Math.floor(y * ((audioAnalyzer.frequencyBinCount / 8) / renderHeight));
-                        const amplitude = Math.min(255, (spectrum[sampleIdx] * 2));
-                        const x = Math.floor(renderWidth * percentCompleted);
+                        const amplitude = (255 - Math.min(255, (spectrum[sampleIdx] * 2)));
+                        const x = Math.floor(renderWidth * playbackPos);
 
-                        if (get_spectrogram_value(x, y) < amplitude)
+                        if (get_spectrogram_value(x, y) >= amplitude)
                         {
                             set_spectrogram_value(x, y, amplitude);
                         }
