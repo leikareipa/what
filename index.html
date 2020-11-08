@@ -31,19 +31,37 @@
             <div id="controls-container"
                  v-cloak
                  v-visible-if="isVideoLoaded">
-                <div id="spectrogram-container">
-                    <canvas id="spectrogram"
-                            width="600"
-                            height="100"></canvas>
+
+                <div id="play-button"
+                     v-cloak
+                     v-on:click="toggle_video_playback()">
+
+                    <i :class="(isVideoPlaying
+                                ? 'fas fa-pause'
+                                : 'fas fa-play')"></i>
+
                 </div>
-            </div>
 
-            <div id="playback-rate-indicator"
-                 v-cloak
-                 v-visible-if="isVideoLoaded"
-                 v-on:click="increase_playback_rate()">
+                <div id="seek-bar">
 
-                {{playbackRate}}
+                    <div id="spectrogram-container">
+
+                        <canvas id="spectrogram"
+                                width="600"
+                                height="100">
+                        </canvas>
+                                
+                    </div>
+
+                </div>
+
+                <div id="playback-rate-indicator"
+                     v-cloak
+                     v-on:click="increase_playback_rate()">
+
+                    {{playbackRate}}
+
+                </div>
 
             </div>
 
@@ -75,6 +93,20 @@
                         this.playbackRate = playbackRateValues[0];
                         playerElement.playbackRate = ui.playbackRate;
                     },
+
+                    toggle_video_playback: function()
+                    {
+                        if (this.isVideoPlaying)
+                        {
+                            playerElement.pause();
+                            this.isVideoPlaying = false;
+                        }
+                        else
+                        {
+                            playerElement.play();
+                            this.isVideoPlaying = true;
+                        }
+                    }
                 }
             });
 
@@ -82,12 +114,12 @@
 
             // Set up clicking on the seek bar
             {
-                const bar = document.getElementById("spectrogram-container");
+                const seekBarElement = document.getElementById("seek-bar");
 
-                bar.onclick = (event)=>
+                seekBarElement.onclick = (event)=>
                 {
                     const barRect = event.target.getBoundingClientRect();
-                    const barWidth = parseFloat(getComputedStyle(bar).getPropertyValue("width"));
+                    const barWidth = parseFloat(getComputedStyle(seekBarElement).getPropertyValue("width"));
                     const x = (event.pageX - barRect.left); 
                     const y = (event.pageY - barRect.top);
                     const percentPlayback = (x / barWidth);
@@ -98,6 +130,8 @@
                     {
                         playerElement.play();
                     }
+
+                    repaint_spectrogram();
                 }
             }
 
@@ -124,6 +158,14 @@
                 return canvasImage.data[idx+3];
             }
 
+            function repaint_spectrogram()
+            {
+                percentCompleted = Math.max(percentCompleted, ((playerElement.currentTime / playerElement.duration) || 0));
+                
+                renderContext.putImageData(canvasImage, 0, 0);
+                document.getElementById("spectrogram-container").style.width = `${Math.min(100, percentCompleted * 100)}%`;
+            }
+
             for (let y = 0; y < renderHeight; y++)
             {
                 for (let x = 0; x < renderWidth; x++)
@@ -138,8 +180,7 @@
 
             setInterval(()=>
             {
-                document.getElementById("spectrogram-container").style.width = `${Math.min(100, percentCompleted * 100)}%`;
-                renderContext.putImageData(canvasImage, 0, 0);
+                repaint_spectrogram();
 
                 /// TODO: Stop this interval after video processing is done.
             }, 1000);
