@@ -54,6 +54,7 @@ body
 
 #controls-container
 {
+    width: 100vw;
     overflow: hidden;
     z-index: 3; /* Above the video player.*/
     position: relative;

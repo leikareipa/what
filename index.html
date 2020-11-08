@@ -18,19 +18,19 @@
         <div id="app">
 
             <input id="video-file-selector"
-                   v-if="!isVideoPlaying"
+                   v-if="!isVideoLoaded"
                    type="file"
                    accept="video/*">
 
             <div id="video-player-container"
                  v-cloak
-                 v-visible-if="isVideoPlaying">
+                 v-visible-if="isVideoLoaded">
                 <video id="video-player"></video>
             </div>
 
             <div id="controls-container"
                  v-cloak
-                 v-visible-if="isVideoPlaying">
+                 v-visible-if="isVideoLoaded">
                 <div id="spectrogram-container">
                     <canvas id="spectrogram"
                             width="600"
@@ -40,7 +40,7 @@
 
             <div class="message"
                  v-cloak
-                 v-visible-if="isVideoPlaying && !isVideoProcessingFinished">
+                 v-visible-if="isVideoLoaded && !isVideoProcessingFinished">
                 Processing
             </div>
 
@@ -57,10 +57,34 @@
             const ui = new Vue({
                 el: "#app",
                 data: {
+                    isVideoLoaded: false,
                     isVideoPlaying: false,
                     isVideoProcessingFinished: false,
                 }
             });
+
+            const playerElement = document.getElementById("video-player");
+
+            // Set up clicking on the seek bar
+            {
+                const bar = document.getElementById("spectrogram-container");
+
+                bar.onclick = (event)=>
+                {
+                    const barRect = event.target.getBoundingClientRect();
+                    const barWidth = parseFloat(getComputedStyle(bar).getPropertyValue("width"));
+                    const x = (event.pageX - barRect.left); 
+                    const y = (event.pageY - barRect.top);
+                    const percentPlayback = (x / barWidth);
+
+                    playerElement.currentTime = (playerElement.duration * percentPlayback);
+
+                    if (!ui.isVideoPlaying)
+                    {
+                        playerElement.play();
+                    }
+                }
+            }
 
             const spectrogramElement = document.getElementById("spectrogram");
             const renderWidth = spectrogramElement.width;
@@ -99,7 +123,7 @@
 
             setInterval(()=>
             {
-                document.getElementById("spectrogram-container").style.width = `${Math.min(100, percentCompleted * 100)}vw`;
+                document.getElementById("spectrogram-container").style.width = `${Math.min(100, percentCompleted * 100)}%`;
                 renderContext.putImageData(canvasImage, 0, 0);
 
                 /// TODO: Stop this interval after video processing is done.
@@ -113,17 +137,22 @@
                 }
 
 				const videoFile = event.target.files[0];
-                const playerElement = document.getElementById("video-player");
                 const audioContext = new AudioContext();
 
                 playerElement.src = URL.createObjectURL(videoFile);
                 playerElement.playbackRate = 16;
                 playerElement.onplay = ()=>
                 {
+                    ui.isVideoLoaded = true;
                     ui.isVideoPlaying = true;
+                }
+                playerElement.onpaused = ()=>
+                {
+                    ui.isVideoPlaying = false;
                 }
                 playerElement.onended = ()=>
                 {
+                    ui.isVideoPlaying = false;
                     ui.isVideoProcessingFinished = true;
                     percentCompleted = 1;
                 }
@@ -141,12 +170,12 @@
                     const spectrum = new Uint8Array(audioAnalyzer.frequencyBinCount);
                     audioAnalyzer.getByteFrequencyData(spectrum);
 
-                    percentCompleted = ((playerElement.currentTime / playerElement.duration) || 0);
+                    percentCompleted = Math.max(percentCompleted, ((playerElement.currentTime / playerElement.duration) || 0));
 
                     for (let y = 0; y < renderHeight; y++)
                     {
                         const sampleIdx = Math.floor(y * ((audioAnalyzer.frequencyBinCount / 8) / renderHeight));
-                        const amplitude = Math.min(255, (spectrum[sampleIdx] * 3));
+                        const amplitude = Math.min(255, (spectrum[sampleIdx] * 2));
                         const x = Math.floor(renderWidth * percentCompleted);
 
                         if (get_spectrogram_value(x, y) < amplitude)
@@ -154,7 +183,7 @@
                             set_spectrogram_value(x, y, amplitude);
                         }
                     }
-                }, 10);
+                }, 0);
             };
         </script>
     </body>
