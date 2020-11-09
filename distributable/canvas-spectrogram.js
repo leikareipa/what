@@ -50,7 +50,8 @@ export function canvas_spectrogram(canvasElement)
         {
             for (let y = 0; y < canvasHeight; y++)
             {
-                const sampleIdx = Math.floor(y * ((spectrum.length / 8) / canvasHeight));
+                const log = -Math.log10(1 - (y / (canvasHeight + 1)));
+                const sampleIdx = Math.floor(log * ((spectrum.length / 2) - 1));
                 const amplitude = Math.round(255 - Math.min(255, (spectrum[sampleIdx] * 2.5)));
                 const x = Math.floor(canvasWidth * time);
 
