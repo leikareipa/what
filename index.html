@@ -7,8 +7,7 @@
         <meta name="viewport"
               content="width=device-width">
         <link rel="stylesheet"
-              href="https://use.fontawesome.com/releases/v5.6.1/css/all.css"
-              integrity="sha384-gfdkjb5BdAXd+lj+gudLWI+BXq4IuLW5IT+brZEZsLFm++aCMlF1V92rMkPaX4PP"
+              href="https://use.fontawesome.com/releases/v5.14.0/css/all.css"
               crossorigin="anonymous">
         <link rel="stylesheet"
               type="text/css"
@@ -42,13 +41,22 @@
                 </div>
 
                 <div id="seek-bar"
-                     :class="isVideoProcessingFinished? 'processing-finished' : ''">
+                     :class="isSeekBarExpanded? 'expanded' : ''">
 
                     <canvas id="spectrogram"
                             width="1000"
                             height="100">
                     </canvas>
                             
+                </div>
+
+                <div class="control-button"
+                     v-on:click="toggle_seekbar_expansion()">
+
+                    <i :class="(isSeekBarExpanded
+                                ? 'fas fa-compress-alt'
+                                : 'fas fa-expand-alt')"></i>
+
                 </div>
 
                 <div class="control-button"
@@ -80,6 +88,7 @@
                     isVideoLoaded: false,
                     isVideoPlaying: false,
                     isVideoProcessingFinished: false,
+                    isSeekBarExpanded: false,
 
                     playbackRate: playbackRateValues[0],
                 },
@@ -103,7 +112,12 @@
                             playerElement.play();
                             this.isVideoPlaying = true;
                         }
-                    }
+                    },
+
+                    toggle_seekbar_expansion: function()
+                    {
+                        this.isSeekBarExpanded = !this.isSeekBarExpanded;
+                    },
                 }
             });
 
