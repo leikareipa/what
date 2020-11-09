@@ -102,7 +102,7 @@ body
 
 #seek-bar.expanded
 {
-    background-color: gray;
+    background-color: dimgray;
     height: calc(100% + 220px);
     margin-top: -220px;
 }

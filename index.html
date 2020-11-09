@@ -74,7 +74,9 @@
 
         <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 
-        <script>
+        <script type="module">
+            import {canvas_spectrogram} from "./canvas-spectrogram.js";
+
             Vue.directive("visible-if", (el, binding)=>
             {
                 el.style.visibility = (binding.value? "visible" : "hidden");
@@ -144,53 +146,10 @@
                 }
             }
 
-            const spectrogramElement = document.getElementById("spectrogram");
-            const renderWidth = spectrogramElement.width;
-            const renderHeight = spectrogramElement.height;
-            const renderContext = spectrogramElement.getContext("2d");
-            const canvasImage = renderContext.getImageData(0, 0, renderWidth, renderHeight);
-
-            function set_spectrogram_value(x, y, value)
-            {
-                y = (renderHeight - y - 1);
-
-                const idx = ((x + y * renderWidth) * 4);
-                canvasImage.data[idx+0] = value;
-                canvasImage.data[idx+1] = value;
-                canvasImage.data[idx+2] = value;
-                canvasImage.data[idx+3] = 255;
-            }
-
-            function get_spectrogram_value(x, y)
-            {
-                y = (renderHeight - y - 1);
-
-                const idx = ((x + y * renderWidth) * 4);
-                return canvasImage.data[idx+0];
-            }
-
-            function repaint_spectrogram()
-            {
-                renderContext.putImageData(canvasImage, 0, 0);
-            }
-
-            for (let y = 0; y < renderHeight; y++)
-            {
-                for (let x = 0; x < renderWidth; x++)
-                {
-                    const idx = ((x + y * renderWidth) * 4);
-                    canvasImage.data[idx+0] = 255;
-                    canvasImage.data[idx+1] = 255;
-                    canvasImage.data[idx+2] = 255;
-                    canvasImage.data[idx+3] = 0;
-                }
-            }
-
+            const spectrogram = canvas_spectrogram(document.getElementById("spectrogram"));
             setInterval(()=>
             {
-                repaint_spectrogram();
-
-                /// TODO: Stop this interval after video processing is done.
+                spectrogram.paint();
             }, 1000);
 
 			document.getElementById("video-file-selector").onchange = (event)=>
@@ -231,22 +190,12 @@
                 // Sample the audio buffer every x milliseconds.
                 setInterval(()=>
                 {
+                    const playbackPos = ((playerElement.currentTime / playerElement.duration) || 0);
                     const spectrum = new Uint8Array(audioAnalyzer.frequencyBinCount);
+
                     audioAnalyzer.getByteFrequencyData(spectrum);
 
-                    const playbackPos = ((playerElement.currentTime / playerElement.duration) || 0);
-
-                    for (let y = 0; y < renderHeight; y++)
-                    {
-                        const sampleIdx = Math.floor(y * ((audioAnalyzer.frequencyBinCount / 8) / renderHeight));
-                        const amplitude = Math.round(255 - Math.min(255, (spectrum[sampleIdx] * 2.5)));
-                        const x = Math.floor(renderWidth * playbackPos);
-
-                        if (get_spectrogram_value(x, y) >= amplitude)
-                        {
-                            set_spectrogram_value(x, y, amplitude);
-                        }
-                    }
+                    spectrogram.add_spectrum(spectrum, playbackPos);
                 }, 0);
             };
         </script>
