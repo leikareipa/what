@@ -16,10 +16,14 @@
 	<body>
         <div id="app">
 
-            <input id="video-file-selector"
-                   v-if="!isVideoLoaded"
-                   type="file"
-                   accept="video/*">
+            <div id="startup-tarp"
+                 v-if="!isVideoLoaded">
+
+                <input id="video-file-selector"
+                       type="file"
+                       accept="video/*">
+                       
+            </div>
 
             <div id="video-player-container"
                  v-cloak
@@ -45,7 +49,7 @@
 
                     <canvas id="spectrogram"
                             width="1000"
-                            height="100">
+                            height="200">
                     </canvas>
                             
                 </div>
