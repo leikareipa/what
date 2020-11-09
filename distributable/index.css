@@ -95,16 +95,15 @@ body
                                           rgba(255, 255, 255, 0.14) 20px,
                                           rgba(255, 255, 255, 0.14) 40px);
 
-    transition: height 0.075s linear,
-                margin-top 0.075s linear,
-                background-color 0.075s linear;
+    transition: height 0.05s ease-in-out,
+                margin-top 0.05s ease-in-out;
 }
 
 #seek-bar.expanded
 {
     background-color: dimgray;
-    height: calc(100% + 220px);
-    margin-top: -220px;
+    height: calc(100% + 250px);
+    margin-top: -250px;
 }
 
 #spectrogram

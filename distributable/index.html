@@ -76,82 +76,43 @@
 
         <script type="module">
             import {canvas_spectrogram} from "./canvas-spectrogram.js";
+            import {vue_ui} from "./vue-ui.js";
 
-            Vue.directive("visible-if", (el, binding)=>
-            {
-                el.style.visibility = (binding.value? "visible" : "hidden");
+            const ui = vue_ui({
+                get videoPlayer() {return playerElement},
             });
-
-            const playbackRateValues = [1, 4, 8, 16];
-
-            const ui = new Vue({
-                el: "#app",
-                data: {
-                    isVideoLoaded: false,
-                    isVideoPlaying: false,
-                    isVideoProcessingFinished: false,
-                    isSeekBarExpanded: false,
-
-                    playbackRate: playbackRateValues[0],
-                },
-                methods: {
-                    increase_playback_rate: function()
-                    {
-                        playbackRateValues.push(playbackRateValues.shift());
-                        this.playbackRate = playbackRateValues[0];
-                        playerElement.playbackRate = ui.playbackRate;
-                    },
-
-                    toggle_video_playback: function()
-                    {
-                        if (this.isVideoPlaying)
-                        {
-                            playerElement.pause();
-                            this.isVideoPlaying = false;
-                        }
-                        else
-                        {
-                            playerElement.play();
-                            this.isVideoPlaying = true;
-                        }
-                    },
-
-                    toggle_seekbar_expansion: function()
-                    {
-                        this.isSeekBarExpanded = !this.isSeekBarExpanded;
-                    },
-                }
-            });
-
             const playerElement = document.getElementById("video-player");
+            const seekBarElement = document.getElementById("seek-bar");
+            const spectrogram = canvas_spectrogram(document.getElementById("spectrogram"));
+
+            setInterval(spectrogram.paint, 1000);
             
-            // Set up clicking on the seek bar
+            // Seek the video when the user clicks on the seek bar.
+            seekBarElement.onclick = (event)=>
             {
-                const seekBarElement = document.getElementById("seek-bar");
-
-                seekBarElement.onclick = (event)=>
+                if (playerElement.locked)
                 {
-                    const barRect = seekBarElement.getBoundingClientRect();
-                    const barWidth = parseFloat(getComputedStyle(seekBarElement).getPropertyValue("width"));
-                    const x = (event.clientX - barRect.left);
-                    const percentPlayback = (x / barWidth);
-
-                    // Give the audio buffer some time to clear itself, or we'll get artefacts
-                    // in the spectrogram.
-                    playerElement.pause()
-                    setTimeout(()=>{
-                        playerElement.currentTime = (playerElement.duration * percentPlayback);
-                        playerElement.play();
-                    }, 200);
+                    return;
                 }
+
+                const barRect = seekBarElement.getBoundingClientRect();
+                const barWidth = parseFloat(getComputedStyle(seekBarElement).getPropertyValue("width"));
+                const x = (event.clientX - barRect.left);
+                const percentPlayback = (x / barWidth);
+
+                // Give the audio buffer some time to clear itself, or we'll get artefacts
+                // in the spectrogram.
+                playerElement.pause();
+                playerElement.locked = true;
+                setTimeout(()=>{
+                    playerElement.currentTime = (playerElement.duration * percentPlayback);
+                    playerElement.play();
+                    playerElement.locked = false;
+                }, 200);
             }
 
-            const spectrogram = canvas_spectrogram(document.getElementById("spectrogram"));
-            setInterval(()=>
-            {
-                spectrogram.paint();
-            }, 1000);
-
+            // When the user gives us a video file, begin playing it and rendering its audio
+            // into the spectrogram.
 			document.getElementById("video-file-selector").onchange = (event)=>
 			{
                 if (!event.target.files.length)
@@ -159,10 +120,7 @@
                     return;
                 }
 
-				const videoFile = event.target.files[0];
-                const audioContext = new AudioContext();
-
-                playerElement.src = URL.createObjectURL(videoFile);
+                playerElement.src = URL.createObjectURL(event.target.files[0]);
                 playerElement.playbackRate = ui.playbackRate;
                 playerElement.onplay = ()=>
                 {
@@ -180,6 +138,7 @@
                     playerElement.play();
                 }
 
+                const audioContext = new AudioContext();
                 const audioSource = audioContext.createMediaElementSource(playerElement);
                 const audioAnalyzer = audioContext.createAnalyser();
                 audioSource.connect(audioAnalyzer);
@@ -194,7 +153,6 @@
                     const spectrum = new Uint8Array(audioAnalyzer.frequencyBinCount);
 
                     audioAnalyzer.getByteFrequencyData(spectrum);
-
                     spectrogram.add_spectrum(spectrum, playbackPos);
                 }, 0);
             };
