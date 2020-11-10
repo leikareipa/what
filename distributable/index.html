@@ -87,6 +87,7 @@
             });
             const playerElement = document.getElementById("video-player");
             const seekBarElement = document.getElementById("seek-bar");
+            const fileSelectorElement = document.getElementById("video-file-selector");
             const spectrogram = canvas_spectrogram(document.getElementById("spectrogram"));
 
             setInterval(spectrogram.paint, 1000);
@@ -117,14 +118,29 @@
 
             // When the user gives us a video file, begin playing it and rendering its audio
             // into the spectrogram.
-			document.getElementById("video-file-selector").onchange = (event)=>
+			fileSelectorElement.onchange = (event)=>
 			{
-                if (!event.target.files.length)
+                if (!event.target ||
+                    !event.target.files ||
+                    !event.target.files.length)
                 {
+                    window.alert("Unknown file type.");
+
                     return;
                 }
 
-                playerElement.src = URL.createObjectURL(event.target.files[0]);
+                const videoFile = event.target.files[0];
+
+                if (!videoFile.type.match("video.*"))
+                {
+                    window.alert("Only video files are supported.");
+
+                    fileSelectorElement.value = "";
+
+                    return;
+                }
+
+                playerElement.src = URL.createObjectURL(videoFile);
                 playerElement.playbackRate = ui.playbackRate;
                 playerElement.onplay = ()=>
                 {
@@ -140,6 +156,10 @@
                     ui.isVideoProcessingFinished = true;
                     playerElement.currentTime = 0;
                     playerElement.play();
+                }
+                playerElement.onerror = ()=>
+                {
+                    window.alert("Something went wrong while playing the video.");
                 }
 
                 const audioContext = new AudioContext();
