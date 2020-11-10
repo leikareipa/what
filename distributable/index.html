@@ -177,7 +177,7 @@
                     const spectrum = new Uint8Array(audioAnalyzer.frequencyBinCount);
 
                     audioAnalyzer.getByteFrequencyData(spectrum);
-                    spectrogram.add_spectrum(spectrum, playbackPos);
+                    spectrogram.add_spectrum(spectrum, playbackPos, ui.playbackRate);
                 }, 0);
             };
         </script>

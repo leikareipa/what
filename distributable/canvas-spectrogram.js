@@ -39,22 +39,38 @@ export function canvas_spectrogram(canvasElement)
     const canvasHeight = canvasElement.height;
     const renderContext = canvasElement.getContext("2d");
     const canvasImage = renderContext.getImageData(0, 0, canvasWidth, canvasHeight);
+    const playbackRateMap = new Array(canvasWidth).fill(Number.MAX_SAFE_INTEGER);
 
     const publicInterface = {
         // Paints the given spectrum (an array of frequency bins of Uint8 amplitude
         // values - see AnalyserNode.getByteFrequencyData()) onto the spectrogram.
         // The 'time' argument gives a value in the range [0,1] identifying the
         // temporal position of the spectrum in the spectrogram: a value of 0 means
-        // the very beginning and 1 the very end.
-        add_spectrum: function(spectrum, time)
+        // the very beginning and 1 the very end. The 'playbackRate' argument gives
+        // the video playback rate associated with the given spectrum.
+        add_spectrum: function(spectrum, time, playbackRate)
         {
+            const x = Math.floor(canvasWidth * time);
+
+            // Don't allow higher playback rates (less accurate spectra) override
+            // lower playback rates (more accurate spectra).
+            if (playbackRateMap[x] < playbackRate)
+            {
+                return;
+            }
+            else
+            {
+                playbackRateMap[x] = playbackRate;
+            }
+
             for (let y = 0; y < canvasHeight; y++)
             {
                 const log = -Math.log10(1 - (y / (canvasHeight + 1)));
                 const sampleIdx = Math.floor(log * ((spectrum.length / 2) - 1));
                 const amplitude = Math.round(255 - Math.min(255, (spectrum[sampleIdx] * 2.5)));
-                const x = Math.floor(canvasWidth * time);
 
+                // Allow higher amplitudes to override lower amplitudes, so we end up
+                // recording the highest amplitude at this horizontal bin.
                 if (get_spectrum_value(x, y) >= amplitude)
                 {
                     set_spectrum_value(x, y, amplitude);
