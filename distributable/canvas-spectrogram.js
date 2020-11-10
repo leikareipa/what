@@ -58,10 +58,10 @@ export function canvas_spectrogram(canvasElement)
             {
                 return;
             }
-            else
-            {
-                playbackRateMap[x] = playbackRate;
-            }
+
+            // If this spectrum is of a lower playback rate than previously set, allow
+            // its values to override all previously-set values.
+            const alwaysOverwriteValues = (playbackRateMap[x] > playbackRate);
 
             for (let y = 0; y < canvasHeight; y++)
             {
@@ -71,11 +71,14 @@ export function canvas_spectrogram(canvasElement)
 
                 // Allow higher amplitudes to override lower amplitudes, so we end up
                 // recording the highest amplitude at this horizontal bin.
-                if (get_spectrum_value(x, y) >= amplitude)
+                if (alwaysOverwriteValues ||
+                    (get_spectrum_value(x, y) >= amplitude))
                 {
                     set_spectrum_value(x, y, amplitude);
                 }
             }
+
+            playbackRateMap[x] = playbackRate;
         },
 
         paint: function()
