@@ -183,17 +183,17 @@
                 }, 0);
             };
 
-            setInterval(spectrogram.paint, 1000);
-
-            (function update_seek_bar_position_indicator()
+            (function refresh_seek_bar()
 			{
 				if (!playerElement.paused)
 				{
+                    spectrogram.paint();
+
 					const percentProgress = ((playerElement.currentTime / playerElement.duration) * 100);
 					document.getElementById("position-indicator").style.left = `${percentProgress}%`;
-				}
-				
-				requestAnimationFrame(update_seek_bar_position_indicator);
+                }
+                
+				requestAnimationFrame(refresh_seek_bar);
 			})();
         </script>
     </body>
