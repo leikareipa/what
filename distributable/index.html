@@ -51,6 +51,10 @@
                             width="1000"
                             height="200">
                     </canvas>
+
+                    <div id="position-indicator"
+                         class="fas fa-caret-down">
+                    </div>
                             
                 </div>
 
@@ -88,9 +92,7 @@
             const playerElement = document.getElementById("video-player");
             const seekBarElement = document.getElementById("seek-bar");
             const fileSelectorElement = document.getElementById("video-file-selector");
-            const spectrogram = canvas_spectrogram(document.getElementById("spectrogram"));
-
-            setInterval(spectrogram.paint, 1000);
+            const spectrogram = canvas_spectrogram(document.getElementById("spectrogram"));   
             
             // Seek the video when the user clicks on the seek bar.
             seekBarElement.onclick = (event)=>
@@ -114,7 +116,7 @@
                     playerElement.play();
                     playerElement.locked = false;
                 }, 200);
-            }
+            };
 
             // When the user gives us a video file, begin playing it and rendering its audio
             // into the spectrogram.
@@ -180,7 +182,19 @@
                     spectrogram.add_spectrum(spectrum, playbackPos, ui.playbackRate);
                 }, 0);
             };
+
+            setInterval(spectrogram.paint, 1000);
+
+            (function update_seek_bar_position_indicator()
+			{
+				if (!playerElement.paused)
+				{
+					const percentProgress = ((playerElement.currentTime / playerElement.duration) * 100);
+					document.getElementById("position-indicator").style.left = `${percentProgress}%`;
+				}
+				
+				requestAnimationFrame(update_seek_bar_position_indicator);
+			})();
         </script>
     </body>
 </html>
-

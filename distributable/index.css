@@ -69,6 +69,11 @@ body
     color: rgb(210, 210, 210);
 }
 
+#video-file-selector
+{
+    cursor: pointer;
+}
+
 #video-player-container
 {
     position: relative;
@@ -101,7 +106,6 @@ body
 #seek-bar
 {
     border: 1px solid black;
-    overflow: hidden;
     border-radius: 9px;
     position: relative;
     z-index: 1;
@@ -116,8 +120,8 @@ body
                                           rgba(255, 255, 255, 0.14) 20px,
                                           rgba(255, 255, 255, 0.14) 40px);
 
-    transition: height 0.075s ease-in-out,
-                margin-top 0.075s ease-in-out;
+    transition: height 0.1s ease-in-out,
+                margin-top 0.1s ease-in-out;
 }
 
 #seek-bar.expanded
@@ -127,10 +131,25 @@ body
     margin-top: -40vh;
 }
 
+#position-indicator
+{
+    transform: translateX(-50%);
+    position: absolute;
+    top: -24px;
+    left: 0;
+    height: 0;
+    background-color: transparent;
+    color: #ffffff;
+    font-size: 300%;
+    -webkit-text-stroke: 1px black;
+    filter: drop-shadow(0 2px 2px black);
+}
+
 #spectrogram
 {
     width: 100%;
     height: 100%;
+    border-radius: inherit;
 }
 
 [v-cloak]
