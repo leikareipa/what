@@ -33,13 +33,13 @@
 //      spectrogram.reset();
 //      spectrogram.paint();
 //
-export function canvas_spectrogram(canvasElement)
+What.canvas_spectrogram = function(canvasElement)
 {
     const canvasWidth = canvasElement.width;
     const canvasHeight = canvasElement.height;
     const renderContext = canvasElement.getContext("2d");
     const canvasImage = renderContext.getImageData(0, 0, canvasWidth, canvasHeight);
-    const playbackRateMap = new Array(canvasWidth).fill(Number.MAX_SAFE_INTEGER);
+    const playbackRateMap = new Array(canvasWidth).fill(Infinity);
 
     const publicInterface = {
         // Paints the given spectrum (an array of frequency bins of Uint8 amplitude

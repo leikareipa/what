@@ -9,13 +9,15 @@
 
 import Vue from "https://cdn.jsdelivr.net/npm/vue/dist/vue.esm.browser.js";
 
-Vue.directive("visible-if", (el, binding)=>
+// Creates, initializes, and returns a new Vue object encapsulating What's UI
+// logic.
+What.vue_ui = function(domElements = {})
 {
-    el.style.visibility = (binding.value? "visible" : "hidden");
-});
+    Vue.directive("visible-if", (el, binding)=>
+    {
+        el.style.visibility = (binding.value? "visible" : "hidden");
+    });
 
-export function vue_ui(domElements = {})
-{
     const playbackRateValues = [1, 4, 8, 16];
 
     return new Vue({
@@ -25,13 +27,13 @@ export function vue_ui(domElements = {})
             isVideoPlaying: false,
             isVideoProcessingFinished: false,
             isSeekBarExpanded: false,
-
             playbackRate: playbackRateValues[0],
         },
         methods: {
             increase_playback_rate: function()
             {
                 playbackRateValues.push(playbackRateValues.shift());
+
                 this.playbackRate = playbackRateValues[0];
                 domElements.videoPlayer.playbackRate = this.playbackRate;
             },

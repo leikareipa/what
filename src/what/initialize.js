@@ -7,19 +7,17 @@
 
 "use strict";
 
-import {canvas_spectrogram} from "./canvas-spectrogram.js";
-import {vue_ui} from "./vue-ui.js";
-
+// Connects What's DOM elements to its program code. This should run exactly once in What's
+// lifetime, at the start of program execution.
 (function()
 {
-    const ui = vue_ui({
+    const ui = What.vue_ui({
         get videoPlayer() {return playerElement},
     });
-
     const playerElement = document.getElementById("video-player");
     const seekBarElement = document.getElementById("seek-bar");
     const fileSelectorElement = document.getElementById("video-file-selector");
-    const spectrogram = canvas_spectrogram(document.getElementById("spectrogram"));   
+    const spectrogram = What.canvas_spectrogram(document.getElementById("spectrogram"));   
 
     // Seek the video when the user clicks on the seek bar.
     seekBarElement.onclick = (event)=>
