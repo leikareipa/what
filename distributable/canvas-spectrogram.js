@@ -106,6 +106,15 @@ export function canvas_spectrogram(canvasElement)
     publicInterface.reset();
     publicInterface.paint();
 
+    const backgroundColor = {r:255, g: 255, b:255} ;
+    const colorGradient = [
+        {r:220, g:220, b:220},
+        {r:175, g:175, b:175},
+        {r:125, g:125, b:125},
+        {r:50,  g:50,  b:50 },
+        {r:0,   g:0,   b:0  },
+    ];
+
     return publicInterface;
 
     function set_spectrum_value(x, y, value)
@@ -113,10 +122,12 @@ export function canvas_spectrogram(canvasElement)
         y = (canvasHeight - y - 1);
 
         const idx = ((x + y * canvasWidth) * 4);
+        const colorIdx = Math.floor(colorGradient.length * ((255 - value) / 256));
+        const color = ((value == 255)? backgroundColor : colorGradient[colorIdx]);
 
-        canvasImage.data[idx+0] = value;
-        canvasImage.data[idx+1] = value;
-        canvasImage.data[idx+2] = value;
+        canvasImage.data[idx+0] = color.r;
+        canvasImage.data[idx+1] = color.g;
+        canvasImage.data[idx+2] = color.b;
         canvasImage.data[idx+3] = 255;
     }
 
