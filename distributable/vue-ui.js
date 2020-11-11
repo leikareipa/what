@@ -7,6 +7,8 @@
 
 "use strict";
 
+import Vue from "https://cdn.jsdelivr.net/npm/vue/dist/vue.esm.browser.js";
+
 Vue.directive("visible-if", (el, binding)=>
 {
     el.style.visibility = (binding.value? "visible" : "hidden");
