@@ -1,6 +1,6 @@
 // WHAT: Concatenated JavaScript source files
 // PROGRAM: What?
-// VERSION: alpha live (11 November 2020 16:00:48 UTC)
+// VERSION: alpha live (11 November 2020 23:41:15 UTC)
 // AUTHOR: Tarpeeksi Hyvae Soft
 // LINK: https://www.github.com/leikareipa/luujanko/
 // FILES:
@@ -258,6 +258,7 @@ playerElement.onplay = ()=>
 {
 ui.isVideoLoaded = true;
 ui.isVideoPlaying = true;
+document.title = `${videoFile.name} - What?`;
 }
 playerElement.onpause = ()=>
 {

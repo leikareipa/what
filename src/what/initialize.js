@@ -73,6 +73,8 @@
         {
             ui.isVideoLoaded = true;
             ui.isVideoPlaying = true;
+
+            document.title = `${videoFile.name} - What?`;
         }
         playerElement.onpause = ()=>
         {
