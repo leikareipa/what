@@ -17,7 +17,16 @@
     const playerElement = document.getElementById("video-player");
     const seekBarElement = document.getElementById("seek-bar");
     const fileSelectorElement = document.getElementById("video-file-selector");
-    const spectrogram = What.canvas_spectrogram(document.getElementById("spectrogram"));   
+    const spectrogram = What.canvas_spectrogram(document.getElementById("spectrogram"));
+
+    window.onkeydown = (event)=>
+    {
+        if ((event.key === " ") &&
+            ui.isVideoLoaded)
+        {
+            ui.toggle_video_playback();
+        }
+    };
 
     // Seek the video when the user clicks on the seek bar.
     seekBarElement.onclick = (event)=>
@@ -89,6 +98,10 @@
         playerElement.onerror = ()=>
         {
             window.alert("Something went wrong while playing the video.");
+        }
+        playerElement.onclick = ()=>
+        {
+            ui.toggle_video_playback();
         }
 
         const audioContext = new AudioContext();

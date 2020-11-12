@@ -1,6 +1,6 @@
 // WHAT: Concatenated JavaScript source files
 // PROGRAM: What?
-// VERSION: alpha live (11 November 2020 23:41:15 UTC)
+// VERSION: alpha live (12 November 2020 00:16:38 UTC)
 // AUTHOR: Tarpeeksi Hyvae Soft
 // LINK: https://www.github.com/leikareipa/luujanko/
 // FILES:
@@ -213,6 +213,14 @@ const playerElement = document.getElementById("video-player");
 const seekBarElement = document.getElementById("seek-bar");
 const fileSelectorElement = document.getElementById("video-file-selector");
 const spectrogram = What.canvas_spectrogram(document.getElementById("spectrogram"));
+window.onkeydown = (event)=>
+{
+if ((event.key === " ") &&
+ui.isVideoLoaded)
+{
+ui.toggle_video_playback();
+}
+};
 // Seek the video when the user clicks on the seek bar.
 seekBarElement.onclick = (event)=>
 {
@@ -273,6 +281,10 @@ playerElement.play();
 playerElement.onerror = ()=>
 {
 window.alert("Something went wrong while playing the video.");
+}
+playerElement.onclick = ()=>
+{
+ui.toggle_video_playback();
 }
 const audioContext = new AudioContext();
 const audioSource = audioContext.createMediaElementSource(playerElement);
